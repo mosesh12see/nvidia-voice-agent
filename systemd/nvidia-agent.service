@@ -1,0 +1,18 @@
+[Unit]
+Description=NVIDIA Voice Agent Launcher
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/nvidia-voice-agent
+EnvironmentFile=/opt/nvidia-voice-agent/.env
+ExecStart=/usr/bin/python3 /opt/nvidia-voice-agent/launcher.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nvidia-agent
+
+[Install]
+WantedBy=multi-user.target

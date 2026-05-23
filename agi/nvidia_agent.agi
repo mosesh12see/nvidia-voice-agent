@@ -1,0 +1,101 @@
+#!/usr/bin/env python3
+"""
+Asterisk AGI script — bridges a call to the NVIDIA voice agent via Daily.co.
+
+Usage in dialplan:
+    exten => s,1,AGI(/opt/nvidia-voice-agent/agi/nvidia_agent.agi,template)
+
+The script:
+1. Calls the launcher to create a Daily.co room and start a Pipecat agent
+2. Returns the room's SIP dial string so Asterisk can bridge the caller into it
+3. Asterisk then dials the Daily SIP endpoint
+"""
+
+import sys
+import os
+import json
+import urllib.request
+import urllib.parse
+
+LAUNCHER_URL = os.getenv("NVIDIA_LAUNCHER_URL", "http://127.0.0.1:4579")
+
+
+def agi_send(msg: str):
+    sys.stdout.write(msg + "\n")
+    sys.stdout.flush()
+
+
+def agi_read() -> str:
+    return sys.stdin.readline().strip()
+
+
+def agi_get_variable(name: str) -> str:
+    agi_send(f"GET VARIABLE {name}")
+    resp = agi_read()
+    if resp.startswith("200"):
+        parts = resp.split("(", 1)
+        if len(parts) > 1:
+            return parts[1].rstrip(")")
+    return ""
+
+
+def agi_set_variable(name: str, value: str):
+    agi_send(f"SET VARIABLE {name} {value}")
+    agi_read()
+
+
+def agi_verbose(msg: str):
+    agi_send(f'VERBOSE "{msg}" 1')
+    agi_read()
+
+
+def start_agent(campaign: str) -> dict:
+    payload = json.dumps({"campaign": campaign}).encode()
+    req = urllib.request.Request(
+        f"{LAUNCHER_URL}/start-call",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        return json.loads(resp.read())
+
+
+def main():
+    # Read AGI env
+    agi_env = {}
+    while True:
+        line = sys.stdin.readline().strip()
+        if not line:
+            break
+        if ":" in line:
+            key, val = line.split(":", 1)
+            agi_env[key.strip()] = val.strip()
+
+    campaign = sys.argv[1] if len(sys.argv) > 1 else "template"
+    agi_verbose(f"nvidia_agent.agi starting campaign={campaign}")
+
+    try:
+        result = start_agent(campaign)
+    except Exception as e:
+        agi_verbose(f"nvidia_agent.agi launcher error: {e}")
+        agi_send("HANGUP")
+        agi_read()
+        sys.exit(1)
+
+    room_url = result.get("room_url", "")
+    room_name = result.get("room_name", "")
+    call_id = result.get("call_id", "")
+
+    agi_verbose(f"nvidia_agent.agi room={room_name} call_id={call_id}")
+
+    # Pass room info back to dialplan via channel variables
+    agi_set_variable("NVIDIA_ROOM_URL", room_url)
+    agi_set_variable("NVIDIA_ROOM_NAME", room_name)
+    agi_set_variable("NVIDIA_CALL_ID", call_id)
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()

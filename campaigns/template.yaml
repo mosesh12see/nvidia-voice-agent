@@ -1,0 +1,15 @@
+name: "Generic Template"
+system_prompt: |
+  You are a friendly, professional voice assistant. Keep responses under 2 sentences.
+  Be conversational, warm, and direct. If the caller wants to speak with someone,
+  say you will transfer them now.
+voice: "en-US-1"
+greeting: "Hey there, thanks for calling. How can I help you today?"
+transfer_extension: "6001"
+transfer_keywords:
+  - "transfer"
+  - "speak to someone"
+  - "real person"
+  - "representative"
+max_duration_seconds: 300
+language: "en"

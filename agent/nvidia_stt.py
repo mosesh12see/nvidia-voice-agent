@@ -1,9 +1,8 @@
 import io
 import os
 import httpx
-from pipecat.services.ai_services import STTService
-from pipecat.frames.frames import TranscriptionFrame, ErrorFrame
-from pipecat.processors.frame_processor import FrameDirection
+from pipecat.services.stt_service import STTService
+from pipecat.frames.frames import ErrorFrame
 
 
 class NvidiaParakeetSTT(STTService):

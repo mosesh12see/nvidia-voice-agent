@@ -9,6 +9,7 @@ import multiprocessing
 from contextlib import asynccontextmanager
 from typing import Optional
 
+import time
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -39,7 +40,7 @@ async def create_daily_room(name: str) -> dict:
                     "max_participants": 2,
                     "enable_chat": False,
                     "enable_prejoin_ui": False,
-                    "exp": int(asyncio.get_event_loop().time()) + 3600,
+                    "exp": int(time.time()) + 3600,
                 },
             },
         )

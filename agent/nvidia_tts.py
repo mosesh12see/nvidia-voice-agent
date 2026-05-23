@@ -1,7 +1,7 @@
 import os
 import httpx
 from typing import AsyncGenerator
-from pipecat.services.ai_services import TTSService
+from pipecat.services.tts_service import TTSService
 from pipecat.frames.frames import AudioRawFrame, ErrorFrame
 
 
